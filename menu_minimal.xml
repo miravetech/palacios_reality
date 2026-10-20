@@ -1,0 +1,43 @@
+<krpano>
+  <!-- Compact adaptation of the bottom bar used in USC_RV/potabilizadora.
+       Uses this tour's native skin actions and sprite, without project-specific menus. -->
+  <skin_settings layout_width="100%" layout_maxwidth="244" controlbar_width="-24"
+    controlbar_height="44" controlbar_offset="16" controlbar_offset_closed="-44"
+    controlbar_overlap="0" controlbar_overlap.no-fractionalscaling="0" controlbar_overlap.fractionalscaling="0"
+    design_bgcolor="0x0B3F46" design_bgalpha="0.78" design_bgborder="1 0xA7E6E2 0.22"
+    design_bgroundedge="22" design_bgshadow="0 8 22 0x001C25 0.28"
+    title="false" thumbs="false" gyro="true" webvr="true" thumbs_width="80" thumbs_height="54" thumbs_padding="8"
+    thumbs_text="true" thumbs_opened="false" tooltips_buttons="true" tooltips_thumbs="true" />
+  <layer name="skin_control_bar_bg" bgroundedge="22" />
+  <layer name="skin_btn_gyro" scale="0.42" tooltip="Giroscopio" />
+  <layer name="skin_btn_vr" scale="0.42" tooltip="Realidad virtual" />
+  <layer name="skin_btn_fs" scale="0.42" tooltip="Pantalla completa" />
+  <layer name="skin_btn_hide" scale="0.42" tooltip="Ocultar menú" />
+  <layer name="skin_btn_show" align="bottom" width="44" height="30" bgcolor="0x0B3F46"
+    bgalpha="0.85" bgborder="1 0xA7E6E2 0.3" bgroundedge="15" capture="true" />
+  <layer name="skin_btn_prev_fs" width="0" x="-9999" enabled="false" capture="false" />
+  <layer name="skin_btn_next_fs" width="0" x="-9999" enabled="false" capture="false" />
+  <action name="skin_arrange_buttons" scope="local">
+    for(set(i,0), i LT 8, inc(i),
+      if(i == 0, set(n,skin_btn_prev)); if(i == 1, set(n,skin_btn_next));
+      if(i == 2, set(n,skin_btn_map)); if(i == 3, set(n,skin_btn_thumbs));
+      if(i == 4, set(n,skin_btn_in)); if(i == 5, set(n,skin_btn_left));
+      if(i == 6, set(n,skin_btn_right)); if(i == 7, set(n,skin_btn_up));
+      set(layer[get(n)],visible=false,enabled=false);
+    );
+    set(layer[skin_btn_down],visible=false,enabled=false);
+    set(layer[skin_btn_out],visible=false,enabled=false);
+    set(layer[skin_btn_navi],visible=false,enabled=false);
+    set(layer[skin_btn_gyro],visible=true,align=center,x=-78,y=0,alpha=0.35);
+    copy(layer[skin_btn_gyro].enabled,plugin[skin_gyro].isavailable);
+    if(plugin[skin_gyro].isavailable, set(layer[skin_btn_gyro].alpha,1));
+    set(layer[skin_btn_fs],visible=true,align=center,x=-26,y=0,alpha=0.35);
+    copy(layer[skin_btn_fs].enabled,device.fullscreensupport);
+    if(device.fullscreensupport, set(layer[skin_btn_fs].alpha,1));
+    set(layer[skin_btn_vr],visible=true,align=center,x=26,y=0,alpha=0.35);
+    copy(layer[skin_btn_vr].enabled,webvr.isavailable);
+    if(webvr.isavailable, set(layer[skin_btn_vr].alpha,1));
+    set(layer[skin_btn_hide],visible=true,enabled=true,align=center,x=78,y=0);
+  </action>
+  <events name="menu_minimal_layout" keep="true" onnewscene="delayedcall(0.2,skin_arrange_buttons());" />
+</krpano>
