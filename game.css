@@ -53,3 +53,8 @@
 .panel p,.panel h1,.panel h2,.panel .eyebrow,.panel label{color:#f8fcff;text-shadow:0 1px 3px #0009}.panel .subtitle{color:#ffe5a3}.panel .dim{color:#d0dfe4}.panel .eyebrow{color:#b9f7dd}.panel .option{background:#06172670}.panel .option:has(input:checked){background:#174d43ad}.panel .access-key{background:#051623b3}.postcredits h2{color:var(--mint)}
 @media(max-width:600px),(pointer:coarse){.quest{background:linear-gradient(135deg,#061b2bc4,#061524b5);backdrop-filter:none;-webkit-backdrop-filter:none}.overlay:not(.cover-screen) .panel{background:linear-gradient(145deg,#0a2638dc,#071827d1);backdrop-filter:none;-webkit-backdrop-filter:none}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.quest{background:#081e2bd1}.overlay:not(.cover-screen) .panel{background:#081e2be6}}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.access-error{animation:access-shake .45s ease-in-out;border-color:#ff7777!important;box-shadow:0 0 0 2px #ff575744,0 12px 40px #0004!important}.access-key[aria-invalid="true"]{border-color:#ff7474;background:#591f2b85;outline:2px solid #ff747455}.access-error [role="status"]{color:#ffb7b7;font-weight:700}
+@keyframes access-shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+@media(prefers-reduced-motion:reduce){.access-error{animation:none}}

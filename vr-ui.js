@@ -23,7 +23,7 @@ window.installGameVR=function(k,root){
   const round=(x,y,w,h,r)=>{ctx.beginPath();ctx.roundRect(x,y,w,h,r);};
   const grad=ctx.createLinearGradient(0,0,W,H);grad.addColorStop(0,'rgba(17,51,67,0.88)');grad.addColorStop(1,'rgba(5,22,37,0.80)');
   ctx.fillStyle=grad;round(2,2,W-4,H-4,40);ctx.fill();ctx.strokeStyle='rgba(196,255,230,.48)';ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle='#b5f4d9';ctx.font='bold 23px Arial';ctx.textAlign='left';ctx.fillText(mission?clean(state.text.split('\n')[0]):'EDUCADORES DEL FUTURO',pad,62);
+  ctx.fillStyle='#b5f4d9';ctx.font='bold 23px Arial';ctx.textAlign='left';ctx.fillText(mission?clean(state.text.split('\n')[0]):(state.heading||'EDUCADORES DEL FUTURO'),pad,62);
   ctx.fillStyle='#fff';ctx.font='32px Arial';ctx.shadowColor='#000';ctx.shadowBlur=5;ctx.shadowOffsetY=2;
   lines.forEach((line,i)=>ctx.fillText(line,pad,bodyY+i*lineHeight));ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   if(pageCount>1){ctx.fillStyle='#bad2d7';ctx.font='22px Arial';ctx.textAlign='right';ctx.fillText((page+1)+' / '+pageCount,W-pad,H-32);}
@@ -40,13 +40,13 @@ window.installGameVR=function(k,root){
   if(!modal.hidden){
    const panel=modal.querySelector('.panel'),cover=panel.querySelector('.cover-start');
    if(cover)return {id:'cover',text:'EDUCADORES DEL FUTURO · Una expedición casi académica',actions:[['Iniciar',()=>click(cover)]]};
-   const texts=[...panel.querySelectorAll('h1,h2,p,.eyebrow')].filter(e=>!e.closest('button')&&visible(e)).map(e=>clean(e.textContent));
+   const texts=[...panel.querySelectorAll('h1,h2,p')].filter(e=>!e.closest('button')&&visible(e)).map(e=>clean(e.textContent));
    const radios=[...panel.querySelectorAll('input[type=radio]')];
    const actions=[];
    if(radios.length){radios.forEach((r,i)=>{actions.push([(r.checked?'✓ ':'')+clean(r.closest('label').textContent),()=>click(r)]);});}
    for(const b of panel.querySelectorAll('button'))if(visible(b))actions.push([clean(b.textContent),()=>click(b)]);
    if(panel.querySelector('input[type=password]'))texts.push('Introduce la contraseña antes de entrar en VR.');
-   return {id:'modal:'+panel.innerHTML,text:texts.join('\n\n'),actions};
+   return {id:'modal:'+panel.innerHTML,text:texts.join('\n\n'),actions,heading:clean(panel.querySelector('.eyebrow')?.textContent),error:panel.classList.contains('access-error')};
   }
   if(!quest.hidden)return {id:'quest:'+quest.textContent,text:clean(quest.querySelector('#quest-number').textContent)+'\n\n'+clean(quest.querySelector('#quest-clue').textContent),actions:[['Cerrar pista',()=>click(quest.querySelector('.quest-close'))],['Ver pista',()=>click(quest.querySelector('#hint'))]]};
   const actions=[];
@@ -63,7 +63,7 @@ window.installGameVR=function(k,root){
   if(!active){active=true;key='';root.style.visibility='hidden';k.call('stoplookto();set(autorotate.enabled,false);');}
   const state=snapshot();
   if(state.id!==key){key=state.id;page=0;anchor=Number(k.get('view.hlookat'))||0;pitch=Math.max(-25,Math.min(25,Number(k.get('view.vlookat'))||0));}
-  const chunks=pages(state.text);page=Math.min(page,chunks.length-1);const signature=JSON.stringify([state.id,state.text,state.actions.map(a=>a[0]),page,anchor,pitch]);if(signature===rendered)return;rendered=signature;used=0;
+  const chunks=pages(state.text);page=Math.min(page,chunks.length-1);const signature=JSON.stringify([state.id,state.text,state.actions.map(a=>a[0]),state.error,page,anchor,pitch]);if(signature===rendered)return;rendered=signature;used=0;
   const actions=state.actions.slice();
   if(chunks.length>1){actions.unshift(['← Leer anterior',()=>{page=Math.max(0,page-1);}]);actions.unshift(['Leer siguiente →',()=>{page=Math.min(chunks.length-1,page+1);}]);}
   actions.push(['Recentrar menú',()=>{anchor=Number(k.get('view.hlookat'))||0;pitch=Number(k.get('view.vlookat'))||0;}]);
