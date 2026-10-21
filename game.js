@@ -39,7 +39,25 @@ window.setupGame=function(k){
  let musicMode='adventure',celebrationOffset=0,celebrationStartedAt=0,celebrationInterrupted=false,celebrationFadeInPending=false,celebrationBuffer=null,celebrationLoading=false,celebrationSource=null,celebrationGain=null;
  let ac,master,musicTimer,musicStep=0,toastTimer,answers=[],questionIndex=0;
  const total=quests.length;
- function audio(){if(!ac){ac=new(window.AudioContext||window.webkitAudioContext)();master=ac.createGain();master.gain.value=muted?0:0.35;master.connect(ac.destination);hologramAudioGain=ac.createGain();hologramAudioGain.gain.value=.39;hologramAudioGain.connect(master);loadHologramAudio();}if(ac.state==='suspended')ac.resume().catch(()=>{});}
+ let audioUnlockPending=false;
+ function audio(){
+  try{
+   if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback';
+  }catch{}
+  if(!ac){const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;ac=new Context();master=ac.createGain();master.gain.value=muted?0:.35;master.connect(ac.destination);hologramAudioGain=ac.createGain();hologramAudioGain.gain.value=.39;hologramAudioGain.connect(master);loadHologramAudio();}
+  if(ac.state!=='running'&&ac.state!=='closed'&&!audioUnlockPending){audioUnlockPending=true;try{Promise.resolve(ac.resume()).catch(()=>{}).finally(()=>{audioUnlockPending=false;});}catch{audioUnlockPending=false;}}
+ }
+ function unlockAudioFromGesture(){
+  if(document.hidden)return;
+  audioUnlockPending=false;audio();
+  if(!ac||ac.state==='closed')return;
+  // A source started synchronously by the tap unlocks older mobile Safari.
+  try{const source=ac.createBufferSource();source.buffer=ac.createBuffer(1,1,ac.sampleRate);source.connect(ac.destination);source.start(0);source.onended=()=>source.disconnect();}catch{}
+ }
+ for(const event of ['touchend','pointerup','click','keydown'])document.addEventListener(event,unlockAudioFromGesture,{capture:true,passive:true});
+ window.addEventListener('pageshow',()=>{if(ac&&started&&!document.hidden)audio();});
+ window.addEventListener('focus',()=>{if(ac&&started&&!document.hidden)audio();});
+
  function loadHologramAudio(){if(hologramAudioLoading||hologramAudioBuffer||!ac)return;hologramAudioLoading=true;fetch('holograma-audio.mp3').then(response=>{if(!response.ok)throw Error('Audio unavailable');return response.arrayBuffer();}).then(data=>ac.decodeAudioData(data)).then(buffer=>{hologramAudioBuffer=buffer;}).catch(()=>{});}
  function updateHologramAudio(h){if(!hologramSoundAllowed||!modal.hidden||(!freeExploration&&!quest.hidden)||!h||!hologramAudioBuffer||!ac||ac.state!=='running'){if(hologramAudioSource){hologramAudioSource.stop();hologramAudioSource.disconnect();hologramAudioSource=null;}hologramAudioOwner=null;return;}if(hologramAudioSource&&hologramAudioOwner===h)return;if(hologramAudioSource){hologramAudioSource.stop();hologramAudioSource.disconnect();}const source=ac.createBufferSource();source.buffer=hologramAudioBuffer;source.loop=true;source.connect(hologramAudioGain);const offset=Math.max(0,Number(h.time)||0)%hologramAudioBuffer.duration;source.start(0,offset);hologramAudioSource=source;hologramAudioOwner=h;}
  function tone(f,t,d=.15,shape='sine',volume=.15){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type=shape;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(volume,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.02);}
@@ -86,7 +104,7 @@ window.setupGame=function(k){
  function update(){if(vrUI)vrUI.update();updateAutoTour();if(freeExploration)updateExplorationNav();for(const n of ['mision_ascensor','mision_dos','mision_tres','victoria_fondo']){const l=k.get('layer['+n+']');if(l){l.visible=false;l.enabled=false;}}const s=k.get('xml.scene');if(s!==scene){scene=s;bind();if(started&&!finished&&introDone&&s!==current().scene)k.call('loadscene('+current().scene+',null,MERGE,BLEND(0.3));');}else bind();if(started&&!finished&&!busy)drawQuest();const vr=k.get('hotspot[game_vr_hint]');if(vr)vr.visible=false;}
  let pointer;document.addEventListener('pointermove',()=>{if(pointer)recordTourInteraction();},{capture:true,passive:true});document.addEventListener('pointercancel',()=>{pointer=null;recordTourInteraction();},{capture:true,passive:true});for(const event of ['wheel','keydown'])document.addEventListener(event,recordTourInteraction,{capture:true,passive:true});document.addEventListener('pointerdown',e=>{recordTourInteraction(e);pointer={x:e.clientX,y:e.clientY};},{capture:true,passive:true});document.addEventListener('pointerup',e=>{recordTourInteraction(e);if(pointer&&Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>8)lastDragUntil=Date.now()+250;pointer=null;},{capture:true,passive:true});
  $('.quest-close').onclick=()=>{hologramSoundAllowed=true;hiddenQuest=true;quest.hidden=true;$('#quest-small').hidden=false;};$('#quest-small').onclick=$('#show-quest').onclick=()=>{hiddenQuest=false;drawQuest();};$('#hint').onclick=hint;$('#help').onclick=()=>welcome(true);$('#sound').onclick=()=>{audio();muted=!muted;master.gain.setTargetAtTime(muted?0:.35,ac.currentTime,.05);$('#sound').textContent=muted?'♪':'♫';$('#sound').setAttribute('aria-pressed',String(muted));$('#sound').setAttribute('aria-label',muted?'Activar música y sonidos':'Silenciar música y sonidos');};
- document.addEventListener('visibilitychange',()=>{if(document.hidden)updateHologramAudio(null);if(ac){if(document.hidden)ac.suspend();else if(started)ac.resume().catch(()=>{});}});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){updateHologramAudio(null);if(ac&&ac.state==='running'){try{Promise.resolve(ac.suspend()).catch(()=>{});}catch{}}}else if(ac&&started)audio();});
  window.PalaciosGame={handle,mediaFallback:()=>showToast('El vídeo usa una imagen de respaldo. La aventura puede continuar.',false),quests:quests.map(q=>({scene:q.scene,name:q.name}))};
  const vrUI=window.installGameVR?window.installGameVR(k,root):null;document.body.classList.add('access-locked');update();setInterval(update,300);accessPassword();
 };
